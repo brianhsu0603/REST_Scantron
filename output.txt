@@ -1,0 +1,49 @@
+POST test:
+
+➜  ~ curl --location --request POST 'http://localhost:5000/api/tests' \
+--header 'Content-Type: application/json' \
+--header 'Content-Type: application/json' \
+--data-raw '{
+  "subject":"Math",
+  "answer_keys":{
+        "1":"A",
+        "2":"B",
+        "3":"C",
+        "4":"D",
+        "5":"E"
+   }
+}
+'
+{"test_id":1,"subject":"Math","answer_keys":{"1":"A","2":"B","3":"C","4":"D","5":"E"},"submissions":[]}
+
+
+
+
+POST scantron:
+
+➜  ~ curl --location --request POST 'http://localhost:5000/api/tests/1/scantrons' \
+--header 'Content-Type: application/json' \
+--header 'Content-Type: application/json' \
+--data-raw '{
+   "scantron_url":"/Users/brian80433/Desktop/273/assignment2",
+   "name":"Brian Hsu",
+   "subject":"Math",
+   "my_answer":{
+        "1":"B",
+        "2":"B",
+        "3":"C",
+        "4":"D",
+        "5":"E"
+ }
+}'   
+{"scantron_id":1,"scantron_url":"/Users/brian80433/Desktop/273/assignment2","name":"Brian Hsu","subject":"Math","score":8,"result":{"1":{"actual":"B","expected":"A"},"2":{"actual":"B","expected":"B"},"3":{"actual":"C","expected":"C"},"4":{"actual":"D","expected":"D"},"5":{"actual":"E","expected":"E"}}}
+
+
+
+
+GET test:
+
+➜  ~ curl --location --request GET 'http://localhost:5000/api/tests/1' \
+--header 'Content-Type: application/json' \
+--data-raw ''
+{"test_id":1,"subject":"Math","answer_keys":{"1":"A","2":"B","3":"C","4":"D","5":"E"},"submissions":[{"scantron_id":1,"scantron_url":"/Users/brian80433/Desktop/273/assignment2","name":"Brian Hsu","subject":"Math","score":8,"result":{"1":{"actual":"B","expected":"A"},"2":{"actual":"B","expected":"B"},"3":{"actual":"C","expected":"C"},"4":{"actual":"D","expected":"D"},"5":{"actual":"E","expected":"E"}}}]}
