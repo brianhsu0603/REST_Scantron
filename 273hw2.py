@@ -3,6 +3,7 @@ import sqlite3
 import math 
 import json
 import ast 
+import sys
 
 app = Flask(__name__)
 
@@ -17,6 +18,8 @@ c.execute('''CREATE TABLE if NOT EXISTS tests
 
 c.execute('''CREATE TABLE submissions
              (scantron_id INTEGER, testId REFERENCES tests(test_id), scantron_url TEXT, name TEXT, subject TEXT, score INTEGER, result TEXT)''')
+
+c
 
 conn.commit()
 
@@ -58,17 +61,13 @@ def create_tests():
 
    conn.commit()
 
-   res = {
-     "test_id":tid,
-     "subject":subject,
-     "answer_keys":answer_keys,
-     "submissions":[]
-     
-     }
+   res = "\n" + "201 Created" + "\n" + "\n" + "{" + "\n" + "\n" + "test_id:"+str(tid) + "\n" + "\n" + "subject:"+str(subject) + "\n" + "\n" +"answer_keys:"+"\n"+str(answer_keys) + "\n" + "\n" + "submissions:[]" + "\n"+ "\n" + "}" 
 
    tid += 1
 
    conn.close()
+
+   
 
    return res
  
@@ -112,12 +111,7 @@ def retrieve_test(t_id):
 
  answer_keys = ast.literal_eval(r)
 
- res = {
-   "test_id":test[0],
-   "subject":test[1],
-   "answer_keys":answer_keys,
-   "submissions": submissions
- }
+ res = "\n" + "{" + "\n" + "\n" + "test_id:"+str(test[0]) + "\n" + "\n" + "subject:"+str(test[1]) + "\n" + "\n" +"answer_keys:"+ "\n"+str(answer_keys) + "\n" + "\n" + "submissions:" + "\n" + str(submissions) + "\n"+ "\n" + "}" 
 
  conn.close()
 
@@ -134,15 +128,31 @@ def add_scantron_to_test(t_id):
    score = 0
 
    global sid
-
-   scantron_url = request.json["scantron_url"]
    
-   name = request.json["name"]
+   f = request.files['data']
 
-   subject = request.json["subject"]
+   file = f.read()
 
-   my_answer = request.json["my_answer"]
+   scantron = json.loads(file)
+   
+   scantron_url = "http://localhost:5000/files/scantron-"+ str(sid)+".json"
 
+   name = scantron["name"]
+
+   subject = scantron["subject"]
+
+   answers = scantron["answers"]
+
+   invalid = []
+
+   for i in range(1,len(answers)+1):
+      
+    if (answers[str(i)] not in ["A","B","C","D"]):
+
+     invalid.append(str(i))
+
+   inv = ("invalid answer at question" + str(invalid))
+         
    conn = sqlite3.connect('273hw2.db')
 
    c = conn.cursor()
@@ -159,26 +169,20 @@ def add_scantron_to_test(t_id):
 
    for i in range(1,len(answer_keys)+1):
           
-      if (my_answer[str(i)] == answer_keys[str(i)]):
+      if (answers[str(i)] == answer_keys[str(i)]):
              
              score = score + 2 
 
       result.update({
        str(i):{
-               "actual":my_answer[str(i)],
+               "actual":answers[str(i)],
 
                "expected":answer_keys[str(i)]
                }
                })
 
-   res = {
-    "scantron_id": sid,
-    "scantron_url": scantron_url,
-    "name": name,
-    "subject": subject,
-    "score": score,
-    "result": result
-    }
+   res = "\n" + "201 Created" + "\n" + "\n" + str(inv) +"\n" + "\n" + "{" + "\n" + "\n" + "scantron_id:"+str(sid) + "\n" + "\n" + "scantron_url:"+str(scantron_url) + "\n" + "\n" +"name:"+str(name) + "\n" + "\n" + "subject:" + str(subject) + "\n"+ "\n" + "score:" + str(score) + "\n" + "\n" + "result:" + "\n"+str(result)+ "\n" + "\n" + "}" 
+
    
    c.execute("INSERT INTO submissions(scantron_id, testId, scantron_url, name, subject, score, result) VALUES (?,?,?,?,?,?,?)",[sid,t_id,scantron_url, name, subject, score, str(result)])
    
@@ -190,8 +194,35 @@ def add_scantron_to_test(t_id):
        
    return res
 
+   
+  
+
   
    
+@app.route('/files/<file_name>',methods=['GET'])
+
+
+
+def get_scantron(file_name):
+      
+ conn = sqlite3.connect('273hw2.db')
+ 
+ c = conn.cursor()
+
+ url = "http://localhost:5000/files/" + file_name
+
+ c.execute("SELECT * FROM submissions WHERE scantron_url = ?",[url])
+
+ scantron = c.fetchone()
+
+ res = "\n" + "{" + "\n" + "\n" + "scantron_id:"+str(scantron[0]) + "\n" + "\n" +"name:"+str(scantron[3]) + "\n" + "\n" + "subject:" + str(scantron[4]) + "\n"+ "\n" + "score:" + str(scantron[5]) + "\n" + "\n" + "result:" +"\n"+ str(scantron[6])+ "\n" + "\n" + "}" 
+
+ 
+ conn.close()
+
+ return res
+
+
              
      
      
